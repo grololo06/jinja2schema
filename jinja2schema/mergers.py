@@ -57,11 +57,15 @@ def merge(fst, snd, custom_merger=None):
     elif isinstance(fst, Tuple) and isinstance(snd, Tuple):
         if fst.items is snd.items is None:
             result = Tuple(None)
+        elif snd.items is None:
+            result = fst.clone()
         else:
             if len(fst.items) != len(snd.items) and not (fst.may_be_extended or snd.may_be_extended):
                 raise MergeException(fst, snd)
             result = Tuple([merge(a, b, custom_merger=custom_merger)
                             for a, b in zip_longest(fst.items, snd.items, fillvalue=Unknown())])
+    elif isinstance(fst, Tuple) and isinstance(snd, List):
+        result = fst.clone()
     else:
         raise MergeException(fst, snd)
     result.label = fst.label or snd.label
