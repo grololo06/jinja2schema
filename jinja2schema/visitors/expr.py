@@ -407,6 +407,17 @@ def visit_call(ast, ctx, macroses=None, config=default_config):
                         predicted_struct=Dictionary.from_ast(ast.node.node, order_nr=config.ORDER_OBJECT.get_next())),
                     macroses, config=config)
             return List(Unknown()), struct
+        if ast.node.attr == 'items':
+            # e.g. the .items() in {% for key, value in data.sortlist.items() %}
+            rtype = List(Tuple([Unknown(), Unknown()]))
+            ctx.meet(rtype, ast)
+            if ast.args or ast.kwargs:
+                raise InvalidExpression(ast, 'items() takes no argument')
+            rtype, struct = visit_expr(
+                    ast.node.node, Context(
+                        predicted_struct=Dictionary.from_ast(ast.node.node, order_nr=config.ORDER_OBJECT.get_next())),
+                    macroses, config=config)
+            return rtype, struct
         if ast.node.attr in ('startswith', 'endswith'):
             ctx.meet(Boolean(), ast)
             rtype, struct = visit_expr(
