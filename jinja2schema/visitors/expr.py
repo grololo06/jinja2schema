@@ -321,6 +321,8 @@ def visit_cond_expr(ast, ctx, macroses=None, config=default_config):
     test_rtype, test_struct = visit_expr(ast.test, Context(predicted_struct=test_predicted_struct), macroses,
                                          config=config)
     if_rtype, if_struct = visit_expr(ast.expr1, ctx, macroses, config=config)
+    if ast.expr2 is None:
+        return if_rtype, if_struct  # one-line if
     else_rtype, else_struct = visit_expr(ast.expr2, ctx, macroses, config=config)
     struct = merge_many(if_struct, test_struct, else_struct)
     rtype = merge_rtypes(if_rtype, else_rtype)
@@ -562,8 +564,12 @@ def visit_tuple(ast, ctx, macroses=None, config=default_config):
 
     struct = Dictionary()
     item_structs = []
-    for item in ast.items:
-        item_rtype, item_struct = visit_expr(item, ctx, macroses, config=config)
+    for ndx, item in enumerate(ast.items):
+        if isinstance(ctx.predicted_struct, Tuple):
+            sub_ctx = Context(predicted_struct=ctx.predicted_struct.items[ndx])
+        else:
+            sub_ctx = ctx
+        item_rtype, item_struct = visit_expr(item, sub_ctx, macroses, config=config)
         item_structs.append(item_rtype)
         struct = merge(struct, item_struct)
     rtype = Tuple.from_ast(ast, item_structs, constant=True, order_nr=config.ORDER_OBJECT.get_next())

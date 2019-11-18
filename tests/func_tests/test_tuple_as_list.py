@@ -1,8 +1,6 @@
-import json
-
-from jinja2schema.core import infer, to_json_schema
+# coding: utf-8
+from jinja2schema.core import infer
 from jinja2schema.model import Dictionary, String
-from jinja2schema.util import _debug_repr
 
 
 def test_tuple_as_list():
@@ -20,7 +18,7 @@ def test_tuple_as_list():
     struct = infer(template)
     expected_struct = Dictionary({
         'data': Dictionary(label="data", data={
-            'ipp': String(label="ipp", linenos=[2,9]),
+            'ipp': String(label="ipp", linenos=[2, 9], value=""),
         }, linenos=[9]),
     })
     assert struct == expected_struct
