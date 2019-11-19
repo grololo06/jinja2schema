@@ -425,7 +425,7 @@ def visit_call(ast, ctx, macroses=None, config=default_config):
                     Context(predicted_struct=String.from_ast(ast.node.node, order_nr=config.ORDER_OBJECT.get_next())),
                     macroses, config=config)
             return Boolean(), struct
-        if ast.node.attr == 'split':
+        if ast.node.attr in ('split', 'splitlines'):
             ctx.meet(List(String()), ast)
             rtype, struct = visit_expr(
                     ast.node.node,
