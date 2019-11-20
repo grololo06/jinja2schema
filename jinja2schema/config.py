@@ -82,6 +82,20 @@ class Config(object):
         self.ORDER_NUMBER = ORDER_NUMBER
         self.ORDER_OBJECT = OrderNumber(number=1, enabled=self.ORDER_NUMBER,
                                         sub_counter_enabled=ORDER_NUMBER_SUB_COUNTER)
+        self.HINTS = dict()
 
+    def add_hint(self, a_function):
+        """Add a type hint for global function. A hint is a simple def stub, with type annotation.
+
+        E.g., Flask url_for can be described as:
+        def url_for(endpoint: str) -> str:
+            pass
+
+        Then injected with:
+            Config().add_hint(url_for)
+        """
+        fct_name = a_function.__name__
+        from inspect import Signature
+        self.HINTS[fct_name] = Signature.from_callable(a_function)
 
 default_config = Config()

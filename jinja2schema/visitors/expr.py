@@ -346,6 +346,27 @@ def visit_cond_expr(ast, ctx, macroses=None, config=default_config):
     return rtype, struct
 
 
+def node_class_from_annot_type(annot_type):
+    # TODO: All the rest of types...
+    if annot_type == str:
+        return String
+
+from inspect import Signature
+def expr_from_signature(ast, ctx, def_sig: Signature, macroses=None, config=default_config):
+    ret_type = def_sig.return_annotation
+    params = def_sig.parameters
+    ctx.meet(node_class_from_annot_type(ret_type)(), ast)
+    struct = Dictionary()
+    for arg, param_name in zip(ast.args, params):
+        param_type = params[param_name]
+        param_class = node_class_from_annot_type(param_type.annotation)
+        arg_rtype, arg_struct = visit_expr(arg, Context(
+            predicted_struct=param_class.from_ast(arg, order_nr=config.ORDER_OBJECT.get_next())), macroses,
+                                           config=config)
+        struct = merge(struct, arg_struct)
+    return node_class_from_annot_type(ret_type)(), struct
+
+
 @visits_expr(nodes.Call)
 def visit_call(ast, ctx, macroses=None, config=default_config):
     if isinstance(ast.node, nodes.Name):
@@ -398,7 +419,11 @@ def visit_call(ast, ctx, macroses=None, config=default_config):
                 raise InvalidExpression(ast, 'dict accepts only keyword arguments')
             return _visit_dict(ast, ctx, macroses, [(kwarg.key, kwarg.value) for kwarg in ast.kwargs], config=config)
         else:
-            raise InvalidExpression(ast, '"{0}" call is not supported'.format(ast.node.name))
+            def_sig = config.HINTS.get(ast.node.name)
+            if def_sig:
+                return expr_from_signature(ast, ctx, def_sig, macroses, config)
+            else:
+                raise InvalidExpression(ast, '"{0}" global call is not supported'.format(ast.node.name))
     elif isinstance(ast.node, nodes.Getattr):
         if ast.node.attr in ('keys', 'iterkeys', 'values', 'itervalues'):
             ctx.meet(List(Unknown()), ast)
@@ -438,7 +463,7 @@ def visit_call(ast, ctx, macroses=None, config=default_config):
                                            config=config)
                 struct = merge(struct, arg_struct)
             return List(String()), struct
-        raise InvalidExpression(ast, '"{0}" call is not supported'.format(ast.node.attr))
+        raise InvalidExpression(ast, '"{0}" attr call is not supported'.format(ast.node.attr))
 
 
 @visits_expr(nodes.Filter)
@@ -539,7 +564,7 @@ def visit_filter(ast, ctx, macroses=None, config=default_config):
     elif ast.name == 'attr':
         raise InvalidExpression(ast, 'attr filter is not supported')
     else:
-        raise InvalidExpression(ast, 'unknown filter')
+        raise InvalidExpression(ast, 'unknown filter "%s"' % ast.name)
     rv = visit_expr(ast.node, Context(
         ctx=ctx,
         return_struct_cls=return_struct_cls,

@@ -15,6 +15,6 @@ def test_splitlines():
 
     struct = infer(template)
     expected_struct = Dictionary({
-        'vin': String(label="vin", linenos=[2, 7], value=""),
+        'vin': String(label="vin", linenos=[2, 7]),
     })
     assert struct == expected_struct
