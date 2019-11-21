@@ -54,6 +54,17 @@ def merge(fst, snd, custom_merger=None):
                 result[k] = snd[k].clone()
     elif isinstance(fst, List) and isinstance(snd, List):
         result = List(merge(fst.item, snd.item, custom_merger=custom_merger))
+        result.indexes.extend(fst.indexes)
+        result.indexes.extend(snd.indexes)
+    elif isinstance(fst, List) and isinstance(snd, Dictionary):
+        result = snd.clone()
+        for ndx in fst.indexes:
+            # TODO: Could be more accurate
+            ndx_type = Scalar()
+            if ndx in snd:
+                result[ndx] = merge(snd[ndx], ndx_type, custom_merger=custom_merger)
+            else:
+                result[ndx] = ndx_type
     elif isinstance(fst, Tuple) and isinstance(snd, Tuple):
         if fst.items is snd.items is None:
             result = Tuple(None)

@@ -192,8 +192,11 @@ class List(Variable):
 
         A structure of list items, subclass of :class:`Variable`.
     """
-    def __init__(self, item, **kwargs):
+    def __init__(self, item, indexes=None, **kwargs):
+        if indexes is None:
+            indexes = []
         self.item = item
+        self.indexes = indexes
         super(List, self).__init__(**kwargs)
 
     def __eq__(self, other):
@@ -212,6 +215,8 @@ class List(Variable):
         kwargs = dict(cls._get_kwargs_from_ast(ast), **kwargs)
         return cls(item, **kwargs)
 
+    def add_used_index(self, ndx):
+        self.indexes.append(ndx)
 
 class Tuple(Variable):
     """A tuple.

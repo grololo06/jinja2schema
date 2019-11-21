@@ -244,6 +244,7 @@ def visit_getitem(ast, ctx, macroses=None, config=default_config):
             if config.TYPE_OF_VARIABLE_INDEXED_WITH_INTEGER_TYPE == 'list':
                 predicted_struct = List.from_ast(ast, ctx.get_predicted_struct(),
                                                  order_nr=config.ORDER_OBJECT.get_next())
+                predicted_struct.add_used_index(arg.value)
             elif config.TYPE_OF_VARIABLE_INDEXED_WITH_INTEGER_TYPE == 'dictionary':
                 predicted_struct = Dictionary.from_ast(ast, {
                     arg.value: ctx.get_predicted_struct(),
