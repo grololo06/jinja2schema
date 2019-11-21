@@ -347,25 +347,41 @@ def visit_cond_expr(ast, ctx, macroses=None, config=default_config):
     return rtype, struct
 
 
-def node_class_from_annot_type(annot_type):
+def node_from_annot_type(ast, annot_type):
+    # TODO: All the rest of types...
+    if annot_type == str:
+        return String()
+    elif isinstance(annot_type, list):
+        inside_type = annot_type[0]
+        return List(node_from_annot_type(ast, inside_type))
+
+    raise InvalidExpression(ast, '"{0}" annotation type not supported'.format(annot_type))
+
+
+def node_class_from_annot_type(ast, annot_type):
     # TODO: All the rest of types...
     if annot_type == str:
         return String
+    elif annot_type == bool:
+        return Boolean
+
+    raise InvalidExpression(ast, '"{0}" annotation type not supported for class'.format(annot_type))
+
 
 from inspect import Signature
 def expr_from_signature(ast, ctx, def_sig: Signature, macroses=None, config=default_config):
     ret_type = def_sig.return_annotation
     params = def_sig.parameters
-    ctx.meet(node_class_from_annot_type(ret_type)(), ast)
+    ctx.meet(node_from_annot_type(ast, ret_type), ast)
     struct = Dictionary()
     for arg, param_name in zip(ast.args, params):
         param_type = params[param_name]
-        param_class = node_class_from_annot_type(param_type.annotation)
+        param_class = node_class_from_annot_type(ast, param_type.annotation)
         arg_rtype, arg_struct = visit_expr(arg, Context(
             predicted_struct=param_class.from_ast(arg, order_nr=config.ORDER_OBJECT.get_next())), macroses,
                                            config=config)
         struct = merge(struct, arg_struct)
-    return node_class_from_annot_type(ret_type)(), struct
+    return node_from_annot_type(ast, ret_type), struct
 
 
 @visits_expr(nodes.Call)
