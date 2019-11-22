@@ -480,6 +480,22 @@ def visit_call(ast, ctx, macroses=None, config=default_config):
                                            config=config)
                 struct = merge(struct, arg_struct)
             return List(String()), struct
+        if ast.node.attr == 'get':
+            # e.g. g.get('useselect4')
+            ctx.meet(Unknown(), ast)
+            struct = Dictionary()
+            arg = ast.args[0]
+            _, arg_struct = visit_expr(arg, Context(
+                predicted_struct=Scalar.from_ast(arg, order_nr=config.ORDER_OBJECT.get_next())), macroses,
+                                       config=config)
+            struct = merge(struct, arg_struct)
+            if len(ast.args)>1:
+                arg = ast.args[1]
+                _, arg_struct = visit_expr(arg, Context(
+                    predicted_struct=String.from_ast(arg, order_nr=config.ORDER_OBJECT.get_next())), macroses,
+                                           config=config)
+                struct = merge(struct, arg_struct)
+            return Unknown(), struct
         raise InvalidExpression(ast, '"{0}" attr call is not supported'.format(ast.node.attr))
 
 
